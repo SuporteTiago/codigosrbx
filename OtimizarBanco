@@ -1,0 +1,42 @@
+#!/bin/bash
+
+BC=`which bc`
+SED=`which sed`
+FREE=`which free`
+GREP=`which grep`
+AWK=`which awk`
+
+MEMTOTAL=`$FREE -g | $GREP Mem | $AWK -F " " {'print $2'}`
+MEMMYSQL=$(($MEMTOTAL * 60 / 100 ))
+INNODBLOG=`echo "scale=3;$MEMMYSQL/2*0.25*1024" | $BC | $AWK -F "." {'print $1'}`
+
+INNODBLOG2=`echo $INNODBLOG M | $SED -e 's/\ //g'`
+MEMMYSQL2=`echo $MEMMYSQL G | $SED -e 's/\ //g'`
+
+clear
+
+echo ""
+echo "---- Copie o conteudo abaixo ----"
+echo ""
+echo "# INNODB #"
+echo "innodb-log-files-in-group = 2"
+echo "innodb-flush-log-at-trx-commit = 2"
+echo "innodb-file-per-table = 1"
+echo "innodb-flush-method            = O_DIRECT"
+echo "innodb-log-file-size           = $INNODBLOG2"
+echo "innodb-buffer-pool-size        = $MEMMYSQL2"
+echo "innodb-buffer-pool-instances = $MEMMYSQL"
+echo "thread-handling = pool-of-threads"
+echo ""
+echo "# Adjusts"
+echo "join_buffer_size               = 10M"
+echo "thread_pool_size               = 24"
+echo ""
+echo "---- Nao copie essa linha em diante ----"
+echo ""
+echo "Após copiado, substitua a parte do INNODB no arquivo /etc/mysql/my.cnf."
+echo "Feito a edição, pare e inicie o serviço do MYSQL."
+echo ""
+echo ""
+echo "/etc/init.d/mysql stop;/etc/init.d/mysql start"
+echo ""
